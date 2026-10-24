@@ -1,7 +1,10 @@
 # プラグインから外部プロセスを実行する
 
 `claude -p` のような時間のかかる外部コマンドを、EmEditor を固めずに実行して結果を受け取る方法。
-実装は [shared/process_runner.h](../shared/process_runner.h)、使用例は [plugins/memo_tidy](../plugins/memo_tidy/)。
+実装は [shared/process_runner.h](../shared/process_runner.h)、使用例は [plugins/claude_chat](../plugins/claude_chat/)。
+
+> 以前はメモを整理して選択範囲を置き換える単発コマンドのプラグイン（memo_tidy）でこの仕組みを使っていた。
+> 機能は Claude チャットのお願いテンプレート「🗂 MECE に整理」に置き換わったので削除したが、下の「非同期で選択範囲を置き換えるとき」はその実装で確認した手順。
 
 ## 全体の流れ
 

@@ -9,8 +9,8 @@
   登録済みの DLL は EmEditor の起動中ロックされるので、上書きできなければ中断する。
   未登録の DLL（初回配置）は EmEditor を起動したままでもコピーできる。
 .EXAMPLE
-  .\scripts\deploy.ps1 -Plugin hello
-  .\scripts\deploy.ps1 -Plugin hello -Configuration Debug   # .pdb も一緒にコピーする
+  .\scripts\deploy.ps1 -Plugin markdown_preview
+  .\scripts\deploy.ps1 -Plugin markdown_preview -Configuration Debug   # .pdb も一緒にコピーする
   .\scripts\deploy.ps1 -Plugin *                            # ビルド済みの全プラグイン
 #>
 [CmdletBinding(SupportsShouldProcess)]

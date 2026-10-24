@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  plugins/hello を雛形に、新しいプラグインのフォルダを作る。
+  templates/plugin（Hello World）を雛形に、新しいプラグインのフォルダを plugins/ に作る。
 .EXAMPLE
   .\scripts\new-plugin.ps1 -Name wordstat -MenuText "Word Stat"
 #>
@@ -11,7 +11,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$src = Join-Path $root 'plugins\hello'
+$src = Join-Path $root 'templates\plugin'
 $dst = Join-Path $root "plugins\$Name"
 if (Test-Path $dst) { throw "既に存在します: $dst" }
 

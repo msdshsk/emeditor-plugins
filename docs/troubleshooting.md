@@ -12,7 +12,7 @@
 
 - 原因: フレームクラスに、etlframe.h が要求する enum 定数/メソッドが足りない。
   公式サンプル `plugin_sample_hello.zip` をそのまま最新の etlframe.h と組み合わせると必ずこれになる。
-- 対処: `plugins/hello/hello.cpp` を雛形にする。必須メンバ一覧は [anatomy.md](anatomy.md#-で必須のメンバetlframeh-2026-10-版)。
+- 対処: `templates/plugin/hello.cpp` を雛形にする（`scripts/new-plugin.ps1` で作れば自動で入る）。必須メンバ一覧は [anatomy.md](anatomy.md#-で必須のメンバetlframeh-2026-10-版)。
 - 確認: 2026-10-24 / VS 2022 17.14 / etlframe.h 053b537
 
 ### `error LNK2019: 未解決の外部シンボル "... _ETLCreateFrame(void)" が関数 OnEvents で参照されました`

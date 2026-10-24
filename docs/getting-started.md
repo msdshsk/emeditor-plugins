@@ -14,18 +14,19 @@ Visual C++ 2012 Express 時代の内容。考え方はそのまま使えるが�
 ## 2. ビルド
 
 ```powershell
-.\scripts\build.ps1                                     # 全プラグイン Release|x64
-.\scripts\build.ps1 -Plugin hello -Configuration Debug  # 1 個だけ Debug
-.\scripts\build.ps1 -Platform Win32                     # 32-bit 版 EmEditor 用
+.\scripts\build.ps1                                                # 全プラグイン（と雛形）Release|x64
+.\scripts\build.ps1 -Plugin markdown_preview -Configuration Debug  # 1 個だけ Debug
+.\scripts\build.ps1 -Platform Win32                                # 32-bit 版 EmEditor 用
 ```
 
 成果物は `out\<Platform>\<Configuration>\<name>.dll`。
+git に入れていない依存物（WebView2 SDK、highlight.js、KaTeX、Mermaid など）は、ビルドの前に `scripts/fetch-deps.ps1` が自動で取得する。
 VS で作業する場合は `EmEditorPlugins.sln` を開く（ソリューションの `x86` 構成 = プロジェクトの `Win32`）。
 
 ## 3. 配置と登録
 
 ```powershell
-.\scripts\deploy.ps1 -Plugin hello
+.\scripts\deploy.ps1 -Plugin markdown_preview
 ```
 
 `out\<Platform>\<Configuration>\` の DLL を、リポジトリ内の固定フォルダ **`deploy\<Platform>\`** にコピーする。
@@ -44,8 +45,8 @@ DLL を選んで登録する必要がある（2026-10-24 / EmEditor 23.0.5 で�
 
 1. EmEditor を起動する。
 2. プラグイン ツールバーに追加されたボタン、または「プラグイン」メニューから実行する。
-3. hello の場合、アウトプット バーに `Hello World!! (EmEditor 23005) file=無題-1` のように出れば成功。
-   （`Editor_GetVersion` は 23.0.5 → `23005` の形式で返る）
+3. 雛形（templates/plugin）から作ったばかりのプラグインなら、アウトプット バーに
+   `Hello World!! (EmEditor 23005) file=無題-1` のように出れば成功。（`Editor_GetVersion` は 23.0.5 → `23005` の形式で返る）
 
 表示されない場合は [troubleshooting.md](troubleshooting.md) の「EmEditor に認識されない」を参照。
 
@@ -63,7 +64,7 @@ Debug ビルドでは `_ASSERTE` が有効。etlframe.h 内のアサートもダ
 .\scripts\new-plugin.ps1 -Name wordstat -MenuText "Word Stat"
 ```
 
-`plugins/hello` を複製し、ファイル名・ProjectGuid・メニュー名を差し替えて `.sln` を再生成する。
+雛形 `templates/plugin`（Hello World）を `plugins/<name>/` に複製し、ファイル名・ProjectGuid・メニュー名を差し替えて `.sln` を再生成する。
 その後:
 
 1. `<name>.cpp` の `OnCommand` などを実装する

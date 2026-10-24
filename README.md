@@ -7,8 +7,6 @@ EmEditor 用の自作プラグイン（C++ / DLL）をまとめたモノレポ�
 
 | フォルダ | 概要 |
 |---|---|
-| [plugins/hello](plugins/hello/) | Hello World。アウトプット バーに文字列を出す。**新規プラグインの雛形** |
-| [plugins/memo_tidy](plugins/memo_tidy/) | 走り書きのメモを `claude -p` で MECE に整理し、選択範囲を置き換える |
 | [plugins/claude_chat](plugins/claude_chat/) | サイドパネルで Claude と会話する。Claude は MCP ツールで文書を読み書きできる |
 | [plugins/markdown_preview](plugins/markdown_preview/) | 編集中の Markdown を GFM でリアルタイムプレビュー。スクロール連動・ダブルクリックでジャンプ |
 
@@ -22,7 +20,8 @@ emeditor-plugins/
 ├─ shared/                 … 自作の共通ヘッダ（プロセス実行・MCP サーバー・EmEditor 操作ツールなど）
 ├─ third_party/            … 外部ライブラリ（nlohmann/json, marked。WebView2 SDK は fetch-deps.ps1 で取得）
 ├─ plugins/<name>/         … プラグイン 1 個 = 1 フォルダ = 1 DLL
-├─ scripts/                … build / deploy / new-plugin / update-sln
+├─ templates/plugin/       … 新しいプラグインの雛形（Hello World。new-plugin.ps1 が複製する）
+├─ scripts/                … build / deploy / new-plugin / update-sln / fetch-deps
 ├─ docs/                   … ノウハウ集
 ├─ out/<Platform>/<Config>/ … ビルド成果物（git 管理外）
 ├─ deploy/<Platform>/      … EmEditor に登録する DLL の置き場（git 管理外）
@@ -34,9 +33,9 @@ emeditor-plugins/
 前提: Visual Studio 2022（「C++ によるデスクトップ開発」ワークロード）
 
 ```powershell
-.\scripts\build.ps1                                   # 全プラグインを Release|x64 でビルド
-.\scripts\deploy.ps1 -Plugin hello                    # deploy\x64\ へコピー（EmEditor を終了してから）
-# 初回のみ: EmEditor の「プラグイン > プラグインの設定 > 追加」で deploy\x64\hello.dll を登録
+.\scripts\build.ps1                                   # 全プラグインを Release|x64 でビルド（依存物は自動で取得）
+.\scripts\deploy.ps1 -Plugin markdown_preview         # deploy\x64\ へコピー（登録済みなら EmEditor を終了してから）
+# 初回のみ: EmEditor の「プラグイン > プラグインの設定 > 追加」で deploy\x64\markdown_preview.dll を登録
 .\scripts\new-plugin.ps1 -Name myplugin -MenuText "My Plugin"   # 新しいプラグインを作る
 ```
 

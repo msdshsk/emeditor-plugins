@@ -3,7 +3,7 @@
   plugins/ 以下のプラグインをビルドする。
 .EXAMPLE
   .\scripts\build.ps1                         # 全プラグイン Release|x64
-  .\scripts\build.ps1 -Plugin hello -Configuration Debug
+  .\scripts\build.ps1 -Plugin markdown_preview -Configuration Debug
   .\scripts\build.ps1 -Platform Win32         # 32bit 版 EmEditor 向け
 #>
 param(
@@ -20,7 +20,11 @@ if (-not $msbuild) { throw 'MSBuild が見つかりません。Visual Studio (C+
 
 & (Join-Path $PSScriptRoot 'fetch-deps.ps1')   # WebView2 SDK など、git に入れていない依存物
 
-$projects = Get-ChildItem (Join-Path $root "plugins\$Plugin\*.vcxproj")
+$projects = @(Get-ChildItem (Join-Path $root "plugins\$Plugin\*.vcxproj"))
+if ($Plugin -eq '*') {
+    # 全体ビルドでは雛形（templates/plugin）もビルドし、壊れていないことを確かめる
+    $projects += Get-ChildItem (Join-Path $root 'templates\*\*.vcxproj')
+}
 if (-not $projects) { throw "プロジェクトが見つかりません: plugins\$Plugin" }
 
 $failed = @()

@@ -1,4 +1,4 @@
-// プラグインのバージョン。hello.rc の STRINGTABLE と VERSIONINFO の両方から参照する。
+// プラグインのバージョン。プラグインの .rc の STRINGTABLE と VERSIONINFO の両方から参照する。
 #pragma once
 
 #define PLUGIN_VER_MAJOR    1

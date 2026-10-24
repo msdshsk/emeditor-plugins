@@ -27,8 +27,8 @@
 確認コマンド（VS の開発者 PowerShell）:
 
 ```powershell
-dumpbin /exports out\x64\Release\hello.dll   # 7 関数が並ぶこと
-dumpbin /dependents out\x64\Release\hello.dll  # KERNEL32 / USER32 程度で、VCRUNTIME*.dll が無いこと
+dumpbin /exports out\x64\Release\markdown_preview.dll     # 7 関数が並ぶこと
+dumpbin /dependents out\x64\Release\markdown_preview.dll  # Windows 標準の DLL だけで、VCRUNTIME*.dll が無いこと
 ```
 
 ## リソース (.rc) の文字コード
