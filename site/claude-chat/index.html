@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude チャット for EmEditor — 文書を読み、直してくれる AI パネル</title>
+<meta name="description" content="EmEditor のサイドパネルで Claude Code と会話。開いている文書を Claude が読み、Ctrl+Z で戻せる形で直接書き換えます。API キー不要、Claude Code のログインだけで動く無料のプラグイン。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Claude チャット for EmEditor">
+<meta property="og:description" content="EmEditor の中で Claude Code と会話しながら、文書を読ませて・直させる。API キー不要、ワンタッチのお願いテンプレート付き。">
+<meta property="og:url" content="https://msdshsk.github.io/emeditor-plugins/claude-chat/">
+<meta property="og:image" content="https://msdshsk.github.io/emeditor-plugins/claude-chat/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../">EmEditor Plugins</a>
+    <nav>
+      <a href="#features">特長</a>
+      <a href="#install">インストール</a>
+      <a href="#security">安全性</a>
+      <a href="https://github.com/msdshsk/emeditor-plugins">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <span class="eyebrow">EmEditor プラグイン · 無料 · MIT ライセンス</span>
+    <h1>EmEditor の中で、<br>Claude に文書を読ませて、直させる。</h1>
+    <p class="lead">
+      サイドパネルで Claude Code と会話できるプラグインです。<br>
+      Claude は開いている文書を自分で読み、頼まれれば <strong>Ctrl+Z で戻せる形で直接書き換えます</strong>。
+      API キーは不要。Claude Code にログインしていれば、そのまま動きます。
+    </p>
+    <div class="buttons">
+      <a class="btn primary" href="https://github.com/msdshsk/emeditor-plugins/releases?q=claude-chat&amp;expanded=true">⬇ ダウンロード</a>
+      <a class="btn" href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/claude_chat">ソースコード</a>
+    </div>
+    <div class="shot">
+      <img src="images/screenshot.png" width="1550" height="914" alt="EmEditor の右側に Claude チャットのパネル。左の契約書で選択した条項の意味を、Claude が見出しと箇条書きで説明している">
+    </div>
+    <p class="caption">契約書の条項を選んで「選択範囲の意味をわかりやすく教えて」。Claude がエディタから直接読んで答えます。</p>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>できること</h2>
+      <p class="section-lead">「ちょっと違うな」を、会話で直していく。軽いメモや単発の文章を、いつもの EmEditor のまま。</p>
+      <div class="grid">
+        <div class="card">
+          <div class="icon">📖</div>
+          <h3>文書を自分で読む</h3>
+          <p>貼り付けは不要。「この文書」「選択範囲」と言えば、Claude がツールでエディタから読み取ります。タブを切り替えても、その時点の文書を見ます。</p>
+        </div>
+        <div class="card">
+          <div class="icon">✏️</div>
+          <h3>直接書き換える（Ctrl+Z で戻せる）</h3>
+          <p>部分的な置換、全体の整理し直し、新しいタブへの出力。Claude Code の Edit と同じく、置換は対象が 1 か所に特定できるときだけ行います。</p>
+        </div>
+        <div class="card">
+          <div class="icon">⚡</div>
+          <h3>ワンタッチのお願い</h3>
+          <p>校正・MECE に整理・要約を新しいタブに・箇条書きに・英訳・ビジネス文に・もっと簡潔に・Web で裏付け。ボタン 1 つで送れます。自分で追加も自由。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔑</div>
+          <h3>API キー不要</h3>
+          <p>中身は <code>claude -p</code>。Claude Code に一度ログインしていれば、そのアカウントで動きます。未ログインならパネルにログインボタンが出ます。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🎚️</div>
+          <h3>モデルと Effort を切り替え</h3>
+          <p>Opus / Sonnet / Haiku / Fable と、low〜max の Effort を会話の途中でも変更可能。Web 検索・取得もワンクリックでオン。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🧩</div>
+          <h3>見やすい会話表示</h3>
+          <p>表・コード・箇条書きなどの Markdown をきれいに表示。回答ごとに「コピー」「エディタに挿入」ボタン付き。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="templates">
+    <div class="wrap split">
+      <div>
+        <h2>よく頼むことは、テンプレートに</h2>
+        <p>パネルの下に並ぶボタンを押すだけで、決まったお願いを送れます。入力欄に「です・ます調で」などと書いておけば、補足として一緒に送られます。</p>
+        <div class="chips">
+          <span>✏ 校正</span><span>🗂 MECE に整理</span><span>📝 要約を新しいタブに</span><span>• 箇条書きに</span>
+          <span>🌐 英訳</span><span>👔 ビジネス文に</span><span>✂ もっと簡潔に</span><span>🔎 Web で裏付け</span>
+        </div>
+        <p>テンプレートは JSON ファイルで、「＋ 編集」を押すと EmEditor で開きます。保存すればすぐ反映。テンプレートごとにモデルや Web 検索の有無も指定できます。</p>
+      </div>
+      <pre><code>{
+  "templates": [
+    {
+      "name": "校正",
+      "icon": "✏",
+      "prompt": "選択範囲（選択が無ければ文書全体）の誤字脱字・表記ゆれを直し、文書を直接書き換えてください。",
+      "model": "haiku",
+      "effort": "low"
+    }
+  ]
+}</code></pre>
+    </div>
+  </section>
+
+  <section id="mcp">
+    <div class="wrap split reverse">
+      <div>
+        <h2>普段使っている MCP も、そのまま</h2>
+        <p>Claude Code に登録してある MCP サーバー（<code>~/.claude.json</code>）から、チャットで使うものをチェックで選べます。ブラウザ操作や社内ツールなど、手元の道具を文書作業に持ち込めます。</p>
+        <ul class="check">
+          <li>選んだサーバーだけを渡し、それ以外は読み込まない</li>
+          <li>EmEditor を操作するツールは常に有効</li>
+          <li>設定（API キーを含みうる）はコマンドラインに載せず、一時ファイルで渡して使い終わったら削除</li>
+        </ul>
+      </div>
+      <div class="figure small"><img src="images/settings.png" width="455" height="439" alt="設定画面。既定のモデルと Effort、Web 検索の有無、使う MCP サーバーのチェックリスト"></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>しくみ</h2>
+      <p class="section-lead">EmEditor の中に小さな MCP サーバーを立て、Claude Code にエディタを「ツール」として差し出しています。</p>
+<pre><code>EmEditor
+ ├─ Claude チャット（パネル）── 送信 ──▶ claude -p（Claude Code）
+ │                                         │ ツール呼び出し
+ └─ プラグイン内の MCP サーバー ◀──────────┘ （127.0.0.1・トークン認証）
+       └─ 文書を読む / 選択範囲 / タブ一覧 / 置換 / 挿入 / 全体を書き換え / 新しいタブ</code></pre>
+      <p>EmEditor 標準の AI 機能（API キーで外部サービスにつなぐもの）とは別物です。こちらは Claude Code のログインで動き、EmEditor を Claude のツールとして使わせる方向のプラグインです。</p>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2>インストール</h2>
+      <table>
+        <tr><th>必要なもの</th><td>EmEditor（64-bit なら x64 版、32-bit なら x86 版の DLL）／ <a href="https://claude.com/claude-code">Claude Code</a>（ログイン済み）／ WebView2 Runtime（Windows 11 は標準で入っています）</td></tr>
+        <tr><th>動作確認した環境</th><td>Windows 11 / EmEditor 23.0.5（64-bit）/ Claude Code 2.1</td></tr>
+      </table>
+      <ol class="steps">
+        <li><a href="https://github.com/msdshsk/emeditor-plugins/releases?q=claude-chat&amp;expanded=true">Releases</a> から zip をダウンロードし、<code>claude_chat.dll</code> を好きなフォルダに置く（SHA-256 も掲載しています）</li>
+        <li>EmEditor の「プラグイン &gt; プラグインの設定 &gt; 追加」で DLL を選ぶ</li>
+        <li>「プラグイン &gt; Claude チャット」でパネルを開く。<strong>Ctrl+Enter で送信</strong>、Esc でエディタに戻ります</li>
+      </ol>
+      <p class="note">ソースからビルドすることもできます（Visual Studio 2022）。手順は <a href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/claude_chat">README</a> を参照してください。</p>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="wrap">
+      <h2>安全性</h2>
+      <div class="grid">
+        <div class="card"><h3>ファイル操作・コマンド実行はさせない</h3><p>Claude Code の組み込みツールは無効。使えるのは EmEditor の文書を扱うツールと、オンにした Web 検索・選んだ MCP だけです。</p></div>
+        <div class="card"><h3>外から操作されない</h3><p>MCP サーバーは 127.0.0.1 だけで待ち受け、ポートと認証トークンは毎回ランダム。ブラウザからの要求も拒否します。</p></div>
+        <div class="card"><h3>表示も安全に</h3><p>回答の表示はスクリプトを一切動かさない設定（CSP）。回答にリンクがあっても、パネルの中では開かずブラウザに渡します。</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Claude チャット for EmEditor — <a href="https://github.com/msdshsk/emeditor-plugins">github.com/msdshsk/emeditor-plugins</a> · MIT License · © 2026 msd.shsk</p>
+    <p>EmEditor は Emurasoft, Inc. の商標、Claude は Anthropic, PBC の商標です。本プラグインはどちらの会社とも関係のない非公式のものです。</p>
+  </div>
+</footer>
+
+</body>
+</html>

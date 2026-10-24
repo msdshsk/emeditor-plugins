@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EmEditor Plugins — EmEditor 用の自作プラグイン集</title>
+<meta name="description" content="EmEditor 用の自作プラグイン集。Claude チャット、Markdown プレビューなど。MIT ライセンスのオープンソース。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="EmEditor Plugins">
+<meta property="og:description" content="EmEditor 用の自作プラグイン集。Claude チャット、Markdown プレビューなど。">
+<meta property="og:url" content="https://msdshsk.github.io/emeditor-plugins/">
+<meta property="og:image" content="https://msdshsk.github.io/emeditor-plugins/claude-chat/images/og.png">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./">EmEditor Plugins</a>
+    <nav>
+      <a href="https://github.com/msdshsk/emeditor-plugins">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <span class="eyebrow">オープンソース · MIT ライセンス</span>
+    <h1>EmEditor Plugins</h1>
+    <p class="lead">EmEditor をもっと便利にする、自作プラグインの置き場です。<br>軽いメモや単発の文章を、いつもの EmEditor のまま気持ちよく扱うための道具を作っています。</p>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="grid">
+        <article class="plugin">
+          <a class="thumb" href="claude-chat/"><img src="claude-chat/images/og.png" width="1200" height="630" alt="Claude チャットのスクリーンショット"></a>
+          <div class="body">
+            <h3><a href="claude-chat/">Claude チャット</a></h3>
+            <p>サイドパネルで Claude Code と会話。開いている文書を Claude が読み、Ctrl+Z で戻せる形で直接書き換えます。API キー不要、ワンタッチのお願いテンプレート付き。</p>
+            <div class="tags"><span>AI</span><span>Claude Code</span><span>MCP</span><span>WebView2</span></div>
+            <a class="btn primary" href="claude-chat/">詳しく見る</a>
+          </div>
+        </article>
+        <article class="plugin">
+          <a class="thumb" href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/markdown_preview">紹介ページ準備中</a>
+          <div class="body">
+            <h3><a href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/markdown_preview">Markdown プレビュー</a></h3>
+            <p>編集中の Markdown を GitHub に近い見た目でリアルタイム表示。GFM、コードの色分け、数式（KaTeX）、図（Mermaid）、脚注に対応。スクロール連動・ダブルクリックでジャンプ。</p>
+            <div class="tags"><span>Markdown</span><span>GFM</span><span>KaTeX</span><span>Mermaid</span></div>
+            <a class="btn" href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/markdown_preview">README を見る</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>自分で作りたい人へ</h2>
+      <p>EmEditor のプラグインは C++ の DLL です。公式マニュアルは Visual C++ 2012 時代の内容のため、2026 年の環境で作るときのハマりどころや、
+        WebView2・MCP サーバーをプラグインに組み込む方法を <a href="https://github.com/msdshsk/emeditor-plugins/tree/main/docs">docs/</a> にまとめています。
+        雛形から新しいプラグインを作るスクリプトもあります。</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><a href="https://github.com/msdshsk/emeditor-plugins">github.com/msdshsk/emeditor-plugins</a> · MIT License · © 2026 msd.shsk</p>
+    <p>EmEditor は Emurasoft, Inc. の商標です。本プロジェクトは Emurasoft, Inc. とは関係のない非公式のプラグイン集です。Claude は Anthropic, PBC の商標です。</p>
+  </div>
+</footer>
+
+</body>
+</html>
