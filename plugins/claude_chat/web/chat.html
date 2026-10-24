@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!--
+  Claude チャットの履歴表示（WebView2 の中で NavigateToString で表示する）。
+  {{NONCE}} / {{MARKDOWN_CSS}} はプラグインが読み込み時に置き換える。
+  marked はここには書かず、WebView2 の AddScriptToExecuteOnDocumentCreated で先に読み込む
+  （<script> に直接埋め込むと、marked のソース中の "<!--" "<script" で HTML の解析が狂う）。
+
+  安全策:
+  - CSP: 外部の読み込みは一切なし。スクリプトは nonce 付きのものだけ（Claude の応答に紛れた <script> や onclick は動かない）
+  - marked の生 HTML はエスケープして文字として表示する
+  - リンクはページ内で開かず、プラグインに渡して http(s) だけ既定のブラウザで開く
+
+  ネイティブ → ページ: window.chrome.webview の 'message'（{ type, ... }）
+  ページ → ネイティブ: window.chrome.webview.postMessage({ type: 'copy' | 'insert' | 'open' | 'template' | 'editTemplates', ... })
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{{NONCE}}'; img-src data:;">
+<style>
+{{MARKDOWN_CSS}}
+
+:root {
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #6e7781;
+  --user-bg: #e8f0fc;
+  --user-fg: #1f2328;
+  --claude: #c15f3c;
+  --error: #c62828;
+  --btn-bg: transparent;
+  --btn-hover: #eef1f4;
+  --sep: #e6e9ec;
+  --chip-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1e1f22;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --user-bg: #23344d;
+    --user-fg: #e6edf3;
+    --error: #ff7b72;
+    --btn-hover: #2d3036;
+    --sep: #30343a;
+    --chip-bg: #2a2d32;
+  }
+}
+
+html, body { margin: 0; background: var(--bg); color: var(--fg); }
+body {
+  font-family: "Yu Gothic UI", "Segoe UI", sans-serif; font-size: 13px;
+  padding: 10px 10px 16px; overflow-wrap: anywhere;
+}
+#log { display: flex; flex-direction: column; gap: 10px; }
+
+.notice { color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-wrap; }
+
+/* ユーザー: 右寄せの吹き出し */
+.user { align-self: flex-end; max-width: 88%; }
+.user .bubble {
+  background: var(--user-bg); color: var(--user-fg);
+  padding: 8px 12px; border-radius: 14px 14px 4px 14px; white-space: pre-wrap; line-height: 1.6;
+}
+.user .meta { color: var(--muted); font-size: 11px; text-align: right; margin-top: 3px; }
+
+/* Claude: 左側、名前と本文 */
+.claude { border-top: 1px solid var(--sep); padding-top: 8px; }
+.claude .head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.claude .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--claude); flex: none; }
+.claude .name { font-weight: 600; color: var(--claude); }
+.claude .time { color: var(--muted); font-size: 11px; }
+.claude .actions { margin-left: auto; display: flex; gap: 2px; opacity: 0.6; }
+.claude:hover .actions { opacity: 1; }
+.claude .actions button {
+  font: inherit; font-size: 11px; color: var(--muted); background: var(--btn-bg);
+  border: 1px solid transparent; border-radius: 4px; padding: 1px 6px; cursor: pointer;
+}
+.claude .actions button:hover { background: var(--btn-hover); border-color: var(--sep); color: var(--fg); }
+.claude .body { padding-left: 15px; }
+
+.tool { color: var(--muted); font-size: 11.5px; padding-left: 15px; }
+.error { color: var(--error); white-space: pre-wrap; padding-left: 15px; }
+
+/* お願いテンプレート（画面下に固定） */
+#templates {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1;
+  display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
+  background: var(--bg); border-top: 1px solid var(--sep);
+}
+#templates:empty { display: none; }
+#templates button {
+  font: inherit; font-size: 12px; color: var(--fg); background: var(--chip-bg);
+  border: 1px solid var(--sep); border-radius: 12px; padding: 2px 9px; cursor: pointer; white-space: nowrap;
+}
+#templates button:hover:not(:disabled) { border-color: var(--claude); }
+#templates button:disabled { opacity: 0.45; cursor: default; }
+#templates button.edit { color: var(--muted); background: transparent; border-style: dashed; }
+#templates .tpl-error { color: var(--error); font-size: 11px; width: 100%; }
+
+/* 考え中 */
+#thinking { display: none; align-items: center; gap: 8px; color: var(--claude); padding-left: 2px; font-size: 12px; }
+#thinking.on { display: flex; }
+#thinking .dots span {
+  display: inline-block; width: 6px; height: 6px; margin-right: 3px; border-radius: 50%;
+  background: var(--claude); animation: bounce 1.2s infinite ease-in-out;
+}
+#thinking .dots span:nth-child(2) { animation-delay: 0.15s; }
+#thinking .dots span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+</style>
+</head>
+<body>
+<div id="log"></div>
+<div id="thinking"><span class="dots"><span></span><span></span><span></span></span><span id="thinking-text">Claude が考え中…</span></div>
+<div id="templates"></div>
+
+<script nonce="{{NONCE}}">
+// スクリプトのエラーは画面に出す（真っ白になって原因が分からない、を避ける）
+window.addEventListener('error', (e) => {
+  const el = document.createElement('div');
+  el.className = 'error';
+  el.textContent = `[表示エラー] ${e.message} (${e.lineno}:${e.colno})`;
+  document.body.prepend(el);
+});
+(() => {
+  if (typeof marked === 'undefined') throw new Error('marked が読み込まれていません');
+  const log = document.getElementById('log');
+  const thinking = document.getElementById('thinking');
+  const thinkingText = document.getElementById('thinking-text');
+  const post = (msg) => window.chrome.webview.postMessage(msg);
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // GFM ＋ 改行をそのまま改行に（チャット向け）。生 HTML は文字として表示する
+  marked.use({
+    gfm: true,
+    breaks: true,
+    renderer: {
+      html({ text }) { return escapeHtml(text); },
+    },
+  });
+
+  const nearBottom = () => window.innerHeight + window.scrollY >= document.body.scrollHeight - 60;
+  const scrollBottom = () => window.scrollTo(0, document.body.scrollHeight);
+
+  function add(el) {
+    const stick = nearBottom();
+    log.appendChild(el);
+    if (stick) scrollBottom();
+    return el;
+  }
+
+  function div(cls, text) {
+    const el = document.createElement('div');
+    el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+
+  function claude(markdown, seconds) {
+    const box = div('claude');
+    const head = div('head');
+    head.appendChild(div('dot'));
+    head.appendChild(div('name', 'Claude'));
+    if (seconds !== undefined) head.appendChild(div('time', `${seconds.toFixed(1)} 秒`));
+    const actions = div('actions');
+    for (const [label, type] of [['コピー', 'copy'], ['エディタに挿入', 'insert']]) {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.addEventListener('click', () => post({ type, text: markdown }));
+      actions.appendChild(b);
+    }
+    head.appendChild(actions);
+    box.appendChild(head);
+    const body = div('body markdown');
+    body.innerHTML = marked.parse(markdown);
+    box.appendChild(body);
+    return box;
+  }
+
+  // お願いテンプレートのボタン列。押すとネイティブに番号を送る
+  const templates = document.getElementById('templates');
+  function setTemplates(items, error) {
+    templates.textContent = '';
+    items.forEach((t, index) => {
+      const b = document.createElement('button');
+      b.textContent = t.icon ? `${t.icon} ${t.name}` : t.name;
+      b.title = t.prompt;
+      b.addEventListener('click', () => post({ type: 'template', index }));
+      templates.appendChild(b);
+    });
+    const edit = document.createElement('button');
+    edit.className = 'edit';
+    edit.textContent = '＋ 編集';
+    edit.title = 'テンプレートの JSON ファイルを EmEditor で開く';
+    edit.addEventListener('click', () => post({ type: 'editTemplates' }));
+    templates.appendChild(edit);
+    if (error) templates.appendChild(div('tpl-error', error));
+    setBusy(busy);
+    fitPadding();
+  }
+  // 固定のボタン列に履歴の末尾が隠れないよう、下の余白を合わせる
+  function fitPadding() {
+    document.body.style.paddingBottom = `${templates.offsetHeight + 16}px`;
+  }
+  new ResizeObserver(fitPadding).observe(templates);
+
+  let busy = false;
+  function setBusy(on) {
+    busy = on;
+    for (const b of templates.querySelectorAll('button:not(.edit)')) b.disabled = on;
+  }
+
+  // 考え中: 経過秒数はページ側で数える
+  let thinkingTimer = 0;
+  function setThinking(on) {
+    clearInterval(thinkingTimer);
+    thinking.classList.toggle('on', on);
+    setBusy(on);
+    if (on) {
+      const start = Date.now();
+      const tick = () => { thinkingText.textContent = `Claude が考え中… ${Math.floor((Date.now() - start) / 1000)} 秒`; };
+      tick();
+      thinkingTimer = setInterval(tick, 500);
+      scrollBottom();
+    }
+  }
+
+  window.chrome.webview.addEventListener('message', (e) => {
+    const m = e.data;
+    switch (m.type) {
+      case 'notice': add(div('notice', m.text)); break;
+      case 'user': {
+        const box = div('user');
+        box.appendChild(div('bubble', m.text));
+        if (m.meta) box.appendChild(div('meta', m.meta));
+        add(box);
+        break;
+      }
+      case 'tool': add(div('tool', m.text)); break;
+      case 'claude': add(claude(m.markdown, m.seconds)); break;
+      case 'error': add(div('error', m.text)); break;
+      case 'thinking': setThinking(m.on); break;
+      case 'clear': log.textContent = ''; setThinking(false); break;
+      case 'templates': setTemplates(m.items || [], m.error); break;
+    }
+    if (thinking.classList.contains('on')) scrollBottom();
+  });
+
+  // リンクはページ内で開かず、プラグイン経由で既定のブラウザへ
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    e.preventDefault();
+    post({ type: 'open', href: a.href });
+  });
+
+  post({ type: 'ready' });
+})();
+</script>
+</body>
+</html>

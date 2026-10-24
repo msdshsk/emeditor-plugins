@@ -1,0 +1,58 @@
+// UTF-8 で保存し、code_page(65001) で rc.exe に UTF-8 であることを伝える。
+// （VS のリソースエディタで開くと UTF-16 に書き換えられることがあるので、テキストとして編集する）
+#pragma code_page(65001)
+
+#include <windows.h>
+#include "resource.h"
+#include "version.h"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+// ツールバー用ビットマップ: 16x16、16 色。RGB(192,192,192) が透過色。
+IDB_BITMAP              BITMAP                  "toolbar.bmp"
+
+STRINGTABLE
+BEGIN
+    // メニュー/ツールバー/プラグイン設定に表示される名前
+    IDS_MENU_TEXT           "Claude でメモ整理"
+    // ステータスバーに出る説明（80 文字まで）
+    IDS_STATUS_MESSAGE      "選択範囲（無ければ文書全体）のメモを claude -p で整理し、置き換えます"
+    IDS_VERSION             PLUGIN_VER_STR
+    IDS_SURE_TO_UNINSTALL   "このプラグインをアンインストールしますか?"
+END
+
+// 「プラグインの設定 > プロパティ」で開くダイアログ
+IDD_PROPERTIES DIALOGEX 0, 0, 240, 74
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Claude でメモ整理 - 設定"
+FONT 9, "Yu Gothic UI", 400, 0, 0x80
+BEGIN
+    AUTOCHECKBOX    "原文を残す（原文 / ↓↓↓ / 整理結果 の形で置き換える）", IDC_KEEP_ORIGINAL, 10, 12, 220, 12
+    DEFPUSHBUTTON   "OK", IDOK, 128, 50, 50, 16
+    PUSHBUTTON      "キャンセル", IDCANCEL, 182, 50, 50, 16
+END
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION     PLUGIN_VER_MAJOR,PLUGIN_VER_MINOR,PLUGIN_VER_PATCH,0
+ PRODUCTVERSION  PLUGIN_VER_MAJOR,PLUGIN_VER_MINOR,PLUGIN_VER_PATCH,0
+ FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+ FILEFLAGS       0
+ FILEOS          VOS_NT_WINDOWS32
+ FILETYPE        VFT_DLL
+ FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "FileDescription",  "EmEditor plug-in: Claude でメモ整理"
+            VALUE "FileVersion",      PLUGIN_VER_STR
+            VALUE "OriginalFilename", PLUGIN_FILE_NAME
+            VALUE "ProductVersion",   PLUGIN_VER_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0000, 1200
+    END
+END

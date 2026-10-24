@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  全プラグイン共通のビルド設定。
+  各 plugins/<name>/<name>.vcxproj は Microsoft.Cpp.props の直後でこのファイルを Import する。
+  設定の根拠は docs/project-settings.md を参照。
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\'))</RepoRoot>
+    <EeSdkDir>$(RepoRoot)sdk\</EeSdkDir>
+    <EeSharedDir>$(RepoRoot)shared\</EeSharedDir>
+    <OutDir>$(RepoRoot)out\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(RepoRoot)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <!-- Release でマニフェスト埋め込み不要（公式サンプルと同じ） -->
+    <GenerateManifest Condition="'$(Configuration)'=='Release'">false</GenerateManifest>
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(EeSdkDir);$(EeSharedDir);$(RepoRoot)third_party;$(RepoRoot)third_party\webview2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_USRDLL;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- 最新の etlframe.h は if constexpr / [[nodiscard]] を使うため C++17 以上が必須 -->
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ConformanceMode>true</ConformanceMode>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <!-- x86 のエクスポート関数は __stdcall 前提（x64 では無視される） -->
+      <CallingConvention>StdCall</CallingConvention>
+      <!-- /utf-8: ソース中の日本語リテラルを UTF-8 として解釈する -->
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(EeSharedDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <!-- WebView2LoaderStatic.lib の場所（使うプラグインだけが shared/webview_host.h の #pragma comment でリンクする） -->
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='x64'">$(RepoRoot)third_party\webview2\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories Condition="'$(Platform)'=='Win32'">$(RepoRoot)third_party\webview2\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <!-- 7 つのエクスポート関数（OnCommand など）を序数付きで公開する -->
+      <ModuleDefinitionFile>$(EeSdkDir)exports.def</ModuleDefinitionFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>Disabled</Optimization>
+      <!-- 静的 CRT（/MTd）。VC ランタイムの有無に依存しない DLL にする -->
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Optimization>MinSpace</Optimization>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <StringPooling>true</StringPooling>
+      <!-- 静的 CRT（/MT）。マニュアルの「マルチスレッド DLL ではなくマルチスレッド」 -->
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SetChecksum>true</SetChecksum>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

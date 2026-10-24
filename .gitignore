@@ -1,0 +1,20 @@
+# ビルド成果物
+out/
+obj/
+deploy/
+
+# scripts/fetch-deps.ps1 で取得する依存物（大きいので git に入れない）
+third_party/webview2/
+third_party/highlight/
+third_party/katex/
+third_party/mermaid/
+third_party/marked-footnote/
+*.aps
+*.user
+*.ipch
+*.VC.db
+*.VC.opendb
+.vs/
+
+# 配布用 zip
+dist/

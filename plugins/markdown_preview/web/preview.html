@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<!--
+  Markdown プレビュー（WebView2 の中で NavigateToString で表示する）。
+  {{NONCE}} / {{MARKDOWN_CSS}} / {{HLJS_LIGHT_CSS}} / {{HLJS_DARK_CSS}} / {{KATEX_CSS}} はプラグインが読み込み時に置き換える。
+
+  ライブラリの読み込み（<script> に直接埋め込むと、ソース中の "<!--" "<script" で HTML の解析が狂うので埋め込まない）:
+  - marked / marked-footnote / highlight.js / KaTeX … AddScriptToExecuteOnDocumentCreated でページより先に実行される
+  - Mermaid（5MB）… 図が出てきたときだけ、ページから { type: 'needMermaid' } を送り、プラグインが ExecuteScript で読み込む
+
+  表現:
+  - GFM（表・タスクリスト・取り消し線・自動リンク）、GitHub のアラート（> [!NOTE] など）、見出しのアンカー、脚注
+  - コードの色分け（highlight.js。言語指定のあるコードブロックのみ）
+  - 数式（KaTeX）: $…$ / $`…`$（行内）、$$…$$ と ```math（独立）
+  - 図（Mermaid）: ```mermaid
+  - YAML front matter は折りたたみで表示
+  - 生 HTML は表示する（<details>, <img>, <br> など）。スクリプトは CSP で一切動かない
+  - 相対パスの画像・リンクは、文書のフォルダを https://emeditor-doc.local/ に割り当てて解決する
+
+  安全策（CSP）: スクリプトは nonce 付きのもの（と、プラグインが注入したもの）だけ。インラインのイベントハンドラ・javascript: URL・
+  <iframe>・フォームの送信は動かない。画像は https / data のみ（外部画像も表示する。自分の文書のプレビューなので）。
+
+  ネイティブ → ページ: { type: 'render', markdown, docKey, baseHref, line, caret } / { type: 'scroll', line } / { type: 'caret', line }
+                       / { type: 'message', title, text, action, actionLabel } / { type: 'mermaidReady' }
+  ページ → ネイティブ: { type: 'ready' | 'jump' (line) | 'openFile' (path) | 'open' (href) | 'action' (name) | 'needMermaid' }
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src data:; script-src 'nonce-{{NONCE}}'; img-src https: data:; media-src https:; form-action 'none'; base-uri https:;">
+<base id="base" href="https://emeditor-doc.local/">
+<style>
+{{MARKDOWN_CSS}}
+{{HLJS_LIGHT_CSS}}
+@media (prefers-color-scheme: dark) {
+{{HLJS_DARK_CSS}}
+}
+{{KATEX_CSS}}
+
+:root { --bg: #ffffff; --muted: #6e7781; --sep: #e6e9ec; --hl: rgba(193, 95, 60, 0.10); }
+@media (prefers-color-scheme: dark) { :root { --bg: #0d1117; --muted: #8b949e; --sep: #30363d; --hl: rgba(255, 166, 87, 0.12); } }
+
+html, body { margin: 0; background: var(--bg); }
+body {
+  font-family: "Yu Gothic UI", "Segoe UI", -apple-system, sans-serif; font-size: 14px;
+  padding: 16px 20px 40vh;   /* 下に余白: 文書の末尾までスクロールを合わせられるように */
+}
+#content { max-width: 920px; margin: 0 auto; }
+
+/* 行番号の目印（高さ 0）。カーソル位置のブロックを薄く示す */
+.ln { display: block; height: 0; }
+.markdown > .ln:first-child + * { margin-top: 0; }   /* 先頭の目印の次が本当の先頭要素 */
+.markdown .current { background: var(--hl); box-shadow: 0 0 0 6px var(--hl); border-radius: 4px; }
+
+/* 見出しのアンカー（ホバーで # を出す） */
+.markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 { position: relative; }
+.markdown .anchor { position: absolute; left: -1.1em; padding-right: 0.3em; color: var(--muted); text-decoration: none; opacity: 0; }
+.markdown :is(h1, h2, h3, h4, h5, h6):hover .anchor { opacity: 1; }
+
+/* コード（highlight.js の配色を使い、背景は markdown.css に合わせる） */
+.markdown pre code.hljs { background: none; padding: 0; }
+
+/* 数式 */
+.markdown .math-display { overflow-x: auto; overflow-y: hidden; margin: 0 0 0.75em; }
+.markdown .math-error { color: #cf222e; font-family: monospace; font-size: 0.9em; }
+
+/* 図（Mermaid） */
+.markdown .mermaid-block { margin: 0 0 0.75em; text-align: center; overflow-x: auto; }
+.markdown .mermaid-block svg { max-width: 100%; height: auto; }
+.markdown .mermaid-block .pending { color: var(--muted); font-size: 12px; }
+.markdown .mermaid-block .mermaid-error { color: #cf222e; font-size: 12px; white-space: pre-wrap; text-align: left; }
+
+/* 脚注 */
+.markdown .footnotes { border-top: 1px solid var(--sep); margin-top: 2em; padding-top: 0.5em; font-size: 0.9em; color: var(--muted); }
+.markdown .footnotes h2 { font-size: 1em; border: 0; }
+.markdown sup a[data-footnote-ref] { text-decoration: none; }
+
+/* GitHub のアラート */
+.markdown .markdown-alert { padding: 0.5em 1em; margin: 0 0 0.75em; border-left: 0.25em solid var(--c); border-radius: 0 6px 6px 0; background: color-mix(in srgb, var(--c) 7%, transparent); }
+.markdown .markdown-alert-title { display: flex; align-items: center; gap: 0.4em; font-weight: 600; color: var(--c); margin-bottom: 0.25em; }
+.markdown .markdown-alert > :last-child { margin-bottom: 0; }
+.markdown .markdown-alert.note      { --c: #0969da; }
+.markdown .markdown-alert.tip       { --c: #1a7f37; }
+.markdown .markdown-alert.important { --c: #8250df; }
+.markdown .markdown-alert.warning   { --c: #9a6700; }
+.markdown .markdown-alert.caution   { --c: #cf222e; }
+@media (prefers-color-scheme: dark) {
+  .markdown .markdown-alert.note { --c: #4493f8; } .markdown .markdown-alert.tip { --c: #3fb950; }
+  .markdown .markdown-alert.important { --c: #ab7df8; } .markdown .markdown-alert.warning { --c: #d29922; }
+  .markdown .markdown-alert.caution { --c: #f85149; }
+}
+
+/* front matter */
+.front-matter { margin: 0 0 1em; color: var(--muted); font-size: 12px; }
+.front-matter summary { cursor: pointer; }
+.front-matter pre { margin: 0.4em 0 0; }
+
+/* Markdown ではない文書・空の文書 */
+.message { color: var(--muted); text-align: center; margin-top: 30vh; line-height: 1.8; }
+.message .title { font-size: 15px; color: inherit; }
+.message button { margin-top: 0.8em; font: inherit; padding: 3px 12px; border-radius: 6px; border: 1px solid var(--sep); background: transparent; color: inherit; cursor: pointer; }
+.message button:hover { border-color: var(--muted); }
+
+.error { color: #cf222e; white-space: pre-wrap; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="content" class="markdown"></div>
+
+<script nonce="{{NONCE}}">
+// スクリプトのエラーは画面に出す（真っ白になって原因が分からない、を避ける）
+window.addEventListener('error', (e) => {
+  const el = document.createElement('div');
+  el.className = 'error';
+  el.textContent = `[表示エラー] ${e.message} (${e.lineno}:${e.colno})`;
+  document.body.prepend(el);
+});
+(() => {
+  for (const [name, lib] of [['marked', 'marked'], ['marked-footnote', 'markedFootnote'], ['highlight.js', 'hljs'], ['KaTeX', 'katex']]) {
+    if (typeof window[lib] === 'undefined') throw new Error(`${name} が読み込まれていません`);
+  }
+  const content = document.getElementById('content');
+  const base = document.getElementById('base');
+  const post = (msg) => window.chrome.webview.postMessage(msg);
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  // ---- 見出しの id（GitHub と同じ規則に近づける） ----
+  let slugCounts = new Map();
+  function slug(text) {
+    let s = text.toLowerCase().trim()
+      .replace(/<[^>]*>/g, '')
+      .replace(/[^\p{L}\p{N}\s_-]/gu, '')
+      .replace(/\s/g, '-');
+    const n = slugCounts.get(s) || 0;
+    slugCounts.set(s, n + 1);
+    return n ? `${s}-${n}` : s;
+  }
+
+  // ---- 数式（KaTeX） ----
+  function renderMath(tex, display) {
+    try {
+      const html = katex.renderToString(tex, { displayMode: display, throwOnError: false, output: 'htmlAndMathml' });
+      return display ? `<div class="math-display">${html}</div>` : html;
+    } catch (e) {
+      return `<span class="math-error">${escapeHtml(e.message)}</span>`;
+    }
+  }
+  const mathExtensions = [
+    {  // $$ … $$（独立した数式。複数行可）
+      name: 'mathBlock', level: 'block',
+      start(src) { const m = src.match(/(^|\n)\$\$/); return m ? m.index + m[1].length : undefined; },
+      tokenizer(src) {
+        const m = /^\$\$([\s\S]+?)\$\$[ \t]*(?:\n|$)/.exec(src);
+        if (m) return { type: 'mathBlock', raw: m[0], text: m[1].trim() };
+      },
+      renderer(token) { return renderMath(token.text, true); },
+    },
+    {  // $`…`$（GitHub の書き方）と $…$（行内）。$ の直後・直前が空白のものと、$5 のような金額は数式にしない
+      name: 'mathInline', level: 'inline',
+      start(src) { const i = src.indexOf('$'); return i < 0 ? undefined : i; },
+      tokenizer(src) {
+        let m = /^\$`([^`\n]+?)`\$/.exec(src);
+        if (m) return { type: 'mathInline', raw: m[0], text: m[1] };
+        m = /^\$(?![\s$])((?:\\.|[^\\$\n])+?)(?<!\s)\$(?![\d$])/.exec(src);
+        if (m) return { type: 'mathInline', raw: m[0], text: m[1] };
+      },
+      renderer(token) { return renderMath(token.text, false); },
+    },
+  ];
+
+  marked.use(markedFootnote());
+  marked.use({
+    gfm: true,
+    breaks: false,
+    extensions: mathExtensions,
+    renderer: {
+      heading({ tokens, depth, text }) {
+        const inner = this.parser.parseInline(tokens);
+        const id = slug(text);
+        return `<h${depth} id="${escapeHtml(id)}"><a class="anchor" href="#${encodeURIComponent(id)}" aria-hidden="true">#</a>${inner}</h${depth}>\n`;
+      },
+      code({ text, lang }) {
+        const language = (lang || '').trim().split(/\s+/)[0].toLowerCase();
+        if (language === 'math') return renderMath(text, true);
+        if (language === 'mermaid') return `<div class="mermaid-block" data-src="${escapeHtml(text)}"></div>`;
+        if (language && hljs.getLanguage(language)) {
+          const html = hljs.highlight(text, { language, ignoreIllegals: true }).value;
+          return `<pre><code class="hljs language-${escapeHtml(language)}">${html}</code></pre>\n`;
+        }
+        return `<pre><code>${escapeHtml(text)}</code></pre>\n`;   // 言語指定なしは色分けしない（自動判定は遅く、外れやすい）
+      },
+    },
+  });
+
+  // ---- 図（Mermaid）: 必要になったときだけ読み込み、同じ図は描き直さない ----
+  const mermaidCache = new Map();   // ソース → SVG
+  let mermaidState = 'none';        // none → loading → ready
+  let mermaidSeq = 0;
+  function processMermaid() {
+    const blocks = content.querySelectorAll('.mermaid-block');
+    if (!blocks.length) return;
+    if (mermaidState === 'none') {
+      mermaidState = 'loading';
+      post({ type: 'needMermaid' });
+    }
+    for (const el of blocks) {
+      const src = el.dataset.src;
+      if (mermaidCache.has(src)) { el.innerHTML = mermaidCache.get(src); continue; }
+      if (mermaidState !== 'ready') { el.innerHTML = '<div class="pending">図を準備中…</div>'; continue; }
+      const id = `mermaid-${++mermaidSeq}`;
+      mermaid.render(id, src).then(({ svg }) => {
+        mermaidCache.set(src, svg);
+        if (mermaidCache.size > 50) mermaidCache.delete(mermaidCache.keys().next().value);
+        el.innerHTML = svg;
+      }).catch((e) => {
+        el.innerHTML = `<div class="mermaid-error">Mermaid: ${escapeHtml(e.message || e)}</div>`;
+        document.getElementById('d' + id)?.remove();   // 失敗時に body 直下へ残る一時要素を消す
+      });
+    }
+  }
+  function onMermaidReady() {
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: isDark() ? 'dark' : 'default' });
+    mermaidState = 'ready';
+    processMermaid();
+  }
+
+  // ---- 行番号付きで描画 ----
+  // 最上位のトークンの直前に「何行目から始まるか」の目印 <span class="ln" data-line> を、何もしない html トークンとして差し込み、
+  // 全体を 1 回で HTML にする（スクロール連動・ダブルクリックで使う）。
+  // ブロックを <div> で包むと <details> などの生 HTML の入れ子が壊れ、トークンごとに別々に変換すると脚注などの拡張が正しく動かない
+  function lineStarts(src) {
+    const starts = [0];
+    for (let i = 0; i < src.length; i++) if (src.charCodeAt(i) === 10) starts.push(i + 1);
+    return starts;
+  }
+  function lineOf(starts, offset) {
+    let lo = 0, hi = starts.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (starts[mid] <= offset) lo = mid; else hi = mid - 1; }
+    return lo + 1;   // 1 始まり
+  }
+  const marker = (line) => ({ type: 'html', block: true, pre: false, raw: '', text: `<span class="ln" data-line="${line}"></span>` });
+
+  // YAML front matter（先頭の --- から --- まで）を取り出す。行番号がずれないよう、同じ行数の空行に置き換える
+  function splitFrontMatter(src) {
+    const m = /^---[ \t]*\n([\s\S]*?)\n(?:---|\.\.\.)[ \t]*(?:\n|$)/.exec(src);
+    if (!m) return { yaml: null, body: src };
+    const lines = m[0].split('\n').length - (m[0].endsWith('\n') ? 1 : 0);
+    return { yaml: m[1], body: '\n'.repeat(lines) + src.slice(m[0].length) };
+  }
+
+  function renderMarkdown(src) {
+    slugCounts = new Map();
+    const { yaml, body } = splitFrontMatter(src.replace(/\r\n?/g, '\n'));
+    const starts = lineStarts(body);
+    const tokens = marked.lexer(body);
+    // marked.parse は lexer の後に拡張の walkTokens を呼ぶ。lexer / parser を別々に呼ぶときは自分で呼ぶ必要がある
+    // （呼ばないと、marked-footnote の脚注一覧が先頭に残り、状態も初期化されず 2 回目以降の描画で脚注が壊れる）
+    if (marked.defaults.walkTokens) marked.walkTokens(tokens, marked.defaults.walkTokens);
+    const withMarkers = [];
+    let pos = 0;
+    for (const token of tokens) {
+      if (token.type === 'space' || token.type === 'footnotes') { if (token.type === 'space') pos += token.raw.length; withMarkers.push(token); continue; }
+      const found = token.raw ? body.indexOf(token.raw, pos) : -1;
+      if (found >= 0) { pos = found; withMarkers.push(marker(lineOf(starts, pos))); pos += token.raw.length; }
+      withMarkers.push(token);
+    }
+    withMarkers.links = tokens.links;   // 参照リンク [text][id] の定義を引き継ぐ
+    let html = marked.parser(withMarkers);
+    if (yaml !== null) {
+      html = `<span class="ln" data-line="1"></span><details class="front-matter"><summary>front matter</summary><pre><code>${escapeHtml(yaml)}</code></pre></details>` + html;
+    }
+    content.innerHTML = html;
+    convertAlerts();
+    processMermaid();
+  }
+
+  // > [!NOTE] … を GitHub のアラートにする（描画後の DOM を書き換える）
+  const alertKinds = { NOTE: 'Note', TIP: 'Tip', IMPORTANT: 'Important', WARNING: 'Warning', CAUTION: 'Caution' };
+  const alertIcons = { NOTE: 'ℹ', TIP: '💡', IMPORTANT: '❗', WARNING: '⚠', CAUTION: '⛔' };
+  function convertAlerts() {
+    for (const bq of content.querySelectorAll('blockquote')) {
+      const p = bq.firstElementChild;
+      if (!p || p.tagName !== 'P') continue;
+      const m = /^\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*/i.exec(p.innerHTML);
+      if (!m) continue;
+      const kind = m[1].toUpperCase();
+      p.innerHTML = p.innerHTML.slice(m[0].length).replace(/^<br>\s*/, '');
+      if (!p.innerHTML.trim()) p.remove();
+      const box = document.createElement('div');
+      box.className = `markdown-alert ${kind.toLowerCase()}`;
+      box.innerHTML = `<p class="markdown-alert-title">${alertIcons[kind]} ${alertKinds[kind]}</p>`;
+      while (bq.firstChild) box.appendChild(bq.firstChild);
+      bq.replaceWith(box);
+    }
+  }
+
+  // ---- スクロール連動（エディタの表示行 → プレビュー） ----
+  // 表示されている目印だけ（閉じた <details> の中などは位置が取れないので除く）
+  const markers = () => [...content.querySelectorAll('.ln')].filter((m) => m.getClientRects().length > 0);
+
+  function scrollToLine(line, smooth) {
+    const blocks = markers();
+    if (!blocks.length) return;
+    let prev = blocks[0], next = null;
+    for (const b of blocks) {
+      if (+b.dataset.line <= line) prev = b; else { next = b; break; }
+    }
+    const top = (el) => el.getBoundingClientRect().top + window.scrollY;
+    let y = top(prev);
+    if (next) {
+      const span = +next.dataset.line - +prev.dataset.line;
+      if (span > 0) y += (top(next) - y) * Math.min(1, (line - +prev.dataset.line) / span);
+    }
+    window.scrollTo({ top: Math.max(0, y - 12), behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  // カーソル行のブロック（目印の次の要素）を薄く示す
+  function highlight(line) {
+    for (const el of content.querySelectorAll('.current')) el.classList.remove('current');
+    let target = null;
+    for (const m of markers()) { if (+m.dataset.line <= line) target = m; else break; }
+    let el = target && target.nextElementSibling;
+    while (el && el.classList.contains('ln')) el = el.nextElementSibling;
+    if (el) el.classList.add('current');
+  }
+
+  // 要素から、それが属するブロックの行番号を探す（直前の目印をさかのぼる）
+  function lineOfElement(el) {
+    for (let node = el; node && node !== content; node = node.parentElement) {
+      for (let s = node; s; s = s.previousElementSibling) {
+        if (s.classList && s.classList.contains('ln')) return +s.dataset.line;
+      }
+    }
+    return 0;
+  }
+
+  // ---- メッセージ ----
+  let docKey = null;
+  function showMessage(title, text, action, actionLabel) {
+    docKey = null;
+    content.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'message';
+    box.innerHTML = `<div class="title">${escapeHtml(title)}</div><div>${escapeHtml(text || '')}</div>`;
+    if (action) {
+      const b = document.createElement('button');
+      b.textContent = actionLabel;
+      b.addEventListener('click', () => post({ type: 'action', name: action }));
+      box.appendChild(b);
+    }
+    content.appendChild(box);
+  }
+
+  window.chrome.webview.addEventListener('message', (e) => {
+    const m = e.data;
+    switch (m.type) {
+      case 'render': {
+        const sameDoc = m.docKey === docKey;
+        docKey = m.docKey;
+        if (m.baseHref) base.href = m.baseHref; else base.removeAttribute('href');
+        const keep = window.scrollY;
+        renderMarkdown(m.markdown);
+        if (sameDoc) window.scrollTo(0, keep);           // 編集中は位置を保ち、そのあとエディタに合わせる
+        if (m.line) scrollToLine(m.line, false);
+        if (m.caret) highlight(m.caret);
+        break;
+      }
+      case 'scroll': scrollToLine(m.line, false); break;
+      case 'caret': highlight(m.line); break;
+      case 'message': showMessage(m.title, m.text, m.action, m.actionLabel); break;
+      case 'mermaidReady': onMermaidReady(); break;
+    }
+  });
+
+  // ---- クリック: リンク / ダブルクリック: エディタの該当行へ ----
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a) return;
+    e.preventDefault();
+    const raw = a.getAttribute('href');
+    if (raw.startsWith('#')) {
+      const el = document.getElementById(decodeURIComponent(raw.slice(1)));
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const url = new URL(a.href);
+    if (url.host === 'emeditor-doc.local') {
+      post({ type: 'openFile', path: decodeURIComponent(url.pathname) });   // 文書からの相対パスのファイル → EmEditor で開く
+    } else {
+      post({ type: 'open', href: a.href });                                  // http(s) → 既定のブラウザ
+    }
+  });
+  document.addEventListener('dblclick', (e) => {
+    if (e.target.closest('a')) return;
+    const line = lineOfElement(e.target);
+    if (line) post({ type: 'jump', line });
+  });
+
+  post({ type: 'ready' });
+})();
+</script>
+</body>
+</html>

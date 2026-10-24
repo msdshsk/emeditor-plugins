@@ -1,0 +1,94 @@
+// UTF-8 で保存し、code_page(65001) で rc.exe に UTF-8 であることを伝える。
+// （VS のリソースエディタで開くと UTF-16 に書き換えられることがあるので、テキストとして編集する）
+#pragma code_page(65001)
+
+#include <windows.h>
+#include "resource.h"
+#include "version.h"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+
+// ツールバー用ビットマップ: 16x16、16 色。RGB(192,192,192) が透過色。
+IDB_BITMAP              BITMAP                  "toolbar.bmp"
+
+// 履歴表示（WebView2）。読み込み時に chat.html の {{...}} を CSS・JS で置き換える
+IDR_CHAT_HTML           RCDATA                  "web\\chat.html"
+IDR_MARKDOWN_CSS        RCDATA                  "..\\..\\shared\\web\\markdown.css"
+IDR_MARKED_JS           RCDATA                  "..\\..\\third_party\\marked\\marked.umd.js"
+
+STRINGTABLE
+BEGIN
+    // メニュー/ツールバー/プラグイン設定に表示される名前
+    IDS_MENU_TEXT           "Claude チャット"
+    // ステータスバーに出る説明
+    IDS_STATUS_MESSAGE      "Claude と会話するパネルを開閉します（Claude は文書を読み書きできます）"
+    IDS_VERSION             PLUGIN_VER_STR
+    IDS_SURE_TO_UNINSTALL   "このプラグインをアンインストールしますか?"
+END
+
+// カスタムバーに入れる子ダイアログ。サイズは WM_SIZE で合わせるので、ここでの位置は仮。
+// WS_CHILD + DS_CONTROL: 親（カスタムバー）の Tab 移動に参加する子ダイアログにする
+IDD_CHAT DIALOGEX 0, 0, 160, 240
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD | WS_CLIPCHILDREN
+FONT 9, "Yu Gothic UI", 400, 0, 0x80
+BEGIN
+    // 上部の 1 行: モデル / Effort / Web / 設定（会話の途中でも切り替えられる。次の送信から有効）
+    COMBOBOX        IDC_MODEL, 0, 0, 50, 120, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_EFFORT, 52, 0, 44, 120, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "Web", IDC_WEB, 98, 0, 30, 12
+    PUSHBUTTON      "設定", IDC_SETTINGS, 130, 0, 30, 12
+    // 履歴は通常 WebView2 で描く。これは WebView2 が使えないときの代替（Msftedit.dll を先に LoadLibrary しておくこと）
+    CONTROL         "", IDC_HISTORY, "RICHEDIT50W", ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, 0, 16, 160, 134
+    EDITTEXT        IDC_INPUT, 0, 154, 160, 50, ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP
+    // 「アクティブ: <文書名>（N 行）」を随時表示する
+    LTEXT           "", IDC_ACTIVE_DOC, 0, 208, 160, 12, SS_ENDELLIPSIS | SS_NOPREFIX | SS_CENTERIMAGE
+    // 未ログインを検出したときだけ表示する
+    PUSHBUTTON      "ログイン", IDC_LOGIN, 108, 208, 50, 12, NOT WS_VISIBLE
+    PUSHBUTTON      "新しい会話", IDC_NEW_CHAT, 0, 224, 50, 14
+    PUSHBUTTON      "応答を挿入", IDC_INSERT, 54, 224, 50, 14
+    DEFPUSHBUTTON   "送信", IDC_SEND, 108, 224, 50, 14
+END
+
+// 設定画面（パネルの「設定」ボタン、または「プラグインの設定 > プロパティ」）
+IDD_SETTINGS DIALOGEX 0, 0, 260, 218
+STYLE DS_SETFONT | DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Claude チャット - 設定"
+FONT 9, "Yu Gothic UI", 400, 0, 0x80
+BEGIN
+    GROUPBOX        "パネルを開いたときの初期値", -1, 8, 6, 244, 62
+    LTEXT           "モデル:", -1, 16, 22, 40, 10
+    COMBOBOX        IDC_DEF_MODEL, 60, 20, 80, 120, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Effort:", -1, 150, 22, 30, 10
+    COMBOBOX        IDC_DEF_EFFORT, 184, 20, 60, 120, CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    AUTOCHECKBOX    "Web 検索・取得（WebSearch / WebFetch）を有効にする", IDC_DEF_WEB, 16, 44, 228, 12
+    LTEXT           "使う MCP サーバー（~/.claude.json のユーザー設定から）:", -1, 8, 76, 244, 10
+    CONTROL         "", IDC_MCP_LIST, "SysListView32", LVS_REPORT | LVS_NOCOLUMNHEADER | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP, 8, 88, 244, 76
+    LTEXT           "チェックしたサーバーのツールは、確認なしで Claude が使います。EmEditor 操作用のツールは常に有効です。", IDC_MCP_NOTE, 8, 168, 244, 20
+    DEFPUSHBUTTON   "OK", IDOK, 148, 196, 50, 14
+    PUSHBUTTON      "キャンセル", IDCANCEL, 202, 196, 50, 14
+END
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION     PLUGIN_VER_MAJOR,PLUGIN_VER_MINOR,PLUGIN_VER_PATCH,0
+ PRODUCTVERSION  PLUGIN_VER_MAJOR,PLUGIN_VER_MINOR,PLUGIN_VER_PATCH,0
+ FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+ FILEFLAGS       0
+ FILEOS          VOS_NT_WINDOWS32
+ FILETYPE        VFT_DLL
+ FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+            VALUE "FileDescription",  "EmEditor plug-in: Claude チャット"
+            VALUE "FileVersion",      PLUGIN_VER_STR
+            VALUE "OriginalFilename", PLUGIN_FILE_NAME
+            VALUE "ProductVersion",   PLUGIN_VER_STR
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0000, 1200
+    END
+END
