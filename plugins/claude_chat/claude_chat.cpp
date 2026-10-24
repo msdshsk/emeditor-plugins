@@ -386,7 +386,8 @@ public:
 		else if( nEvent & EVENT_CHANGE ){
 			m_bLabelDirty = true;
 		}
-		if( ( nEvent & EVENT_IDLE ) && m_bLabelDirty ){
+		// 新しい文書を作ったときなどは EVENT_DOC_SEL_CHANGED が来ないので、アイドル時に文書が変わっていないかも見る
+		if( ( nEvent & EVENT_IDLE ) && ( m_bLabelDirty || ( HasView() && ee::doc::GetDocPath( m_hwndView ) != m_labelDocPath ) ) ){
 			UpdateActiveLabel();
 		}
 
@@ -496,6 +497,7 @@ private:
 	bool				m_bClosingBySelf = false;
 	bool				m_bShuttingDown = false;
 	bool				m_bLabelDirty = false;
+	std::wstring		m_labelDocPath;          // 「アクティブ: ○○」に出している文書
 	HWND				m_hwndView = nullptr;    // 最後にイベントが来たビュー（ツールの操作対象）
 
 	// 会話
@@ -812,6 +814,7 @@ private:
 	{
 		m_bLabelDirty = false;
 		if( !m_hDlg || !HasView() )  return;
+		m_labelDocPath = ee::doc::GetDocPath( m_hwndView );
 		const UINT_PTR lines = Editor_GetLines( m_hwndView, POS_LOGICAL_W );
 		const std::wstring label = L"アクティブ: " + ee::tools::GetDocName( m_hwndView ) + L"（" + std::to_wstring( lines ) + L" 行）";
 		SetDlgItemTextW( m_hDlg, IDC_ACTIVE_DOC, label.c_str() );
