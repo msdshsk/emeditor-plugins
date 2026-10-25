@@ -7,10 +7,10 @@
 
 1. `plugins/<plugin>/version.h` の版を上げる（`PLUGIN_VER_MAJOR/MINOR/PATCH` と `PLUGIN_VER_STR`）
 2. コミットして push
-3. タグを付けて push
+3. タグを付けて push。**タグのメッセージの 2 行目以降が、Release 本文の「変更点」になる**（1 行目はタイトル、2 行目は空行）
 
    ```powershell
-   git tag -a claude-chat-v1.1.0 -m "Claude チャット v1.1.0"
+   git tag -a claude-chat-v1.1.0 -F tag-message.txt   # 1 行目: タイトル / 空行 / 変更点の箇条書き
    git push origin claude-chat-v1.1.0
    ```
 
@@ -50,3 +50,5 @@ git tag -d claude-chat-v1.1.0                       # ローカルのタグを�
 |---|---|---|
 | 2026-10-25 | claude-chat-v1.0.0 | 初回。zip 507KB |
 | 2026-10-25 | markdown-preview-v1.0.0 | 初回。zip 4.4MB（DLL 6.5MB、うち Mermaid 5MB） |
+| 2026-10-25 | claude-chat-v1.1.0 | 巨大ファイル対策、EmEditor の検索・抽出・置換・フィルターをツール化 |
+| 2026-10-25 | markdown-preview-v1.1.0 | 脚注の見出しを日本語に、大きすぎる文書をプレビューしない |

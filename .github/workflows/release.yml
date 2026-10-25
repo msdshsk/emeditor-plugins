@@ -45,10 +45,16 @@ jobs:
           $title   = '${{ steps.meta.outputs.title }}'
           $name    = "$product-$version"
           $sums    = Get-Content "dist/$name.sha256.txt"
+          # 注釈付きタグのメッセージの 2 行目以降を「変更点」として載せる（1 行目はタイトル）
+          git fetch --force origin "refs/tags/${{ github.ref_name }}:refs/tags/${{ github.ref_name }}" 2>$null
+          $tagBody = (git tag -l --format='%(contents:body)' '${{ github.ref_name }}' | Out-String).Trim()
+          $changes = if ($tagBody) { "### 変更点`n$tagBody`n" } else { '' }
           $notes = @"
           ## $title for EmEditor v$version
 
           紹介ページ: https://msdshsk.github.io/emeditor-plugins/$product/
+
+          $changes
 
           ### インストール
           1. ``$name.zip`` をダウンロードして展開する
