@@ -3,6 +3,9 @@
 EmEditor 用の自作プラグイン（C++ / DLL）をまとめたモノレポ。
 公式マニュアルは情報が古い部分があるため、作り方やハマりどころを [docs/](docs/) に蓄積していく。
 
+- 紹介ページ: https://msdshsk.github.io/emeditor-plugins/
+- ダウンロード: [Releases](https://github.com/msdshsk/emeditor-plugins/releases)
+
 ## プラグイン一覧
 
 | フォルダ | 概要 |
@@ -51,6 +54,7 @@ emeditor-plugins/
 - [mcp-in-plugin.md](docs/mcp-in-plugin.md) — プラグイン内に MCP サーバーを立て、claude -p に EmEditor を操作させる
 - [webview2.md](docs/webview2.md) — WebView2 で表示を作る（チャット履歴・Markdown プレビュー）
 - [troubleshooting.md](docs/troubleshooting.md) — 実際に出たエラーと対処
+- [releasing.md](docs/releasing.md) — リリースの手順（タグを push → GitHub Actions が zip と SHA-256 を作る）
 
 ## ライセンス
 

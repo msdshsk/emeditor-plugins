@@ -12,6 +12,8 @@ EmEditor プラグイン（C++ DLL）のモノレポ。全体像は README.md、
 - .rc は UTF-8（BOM なし）+ `#pragma code_page(65001)`。
 - ビルド確認は `.\scripts\build.ps1`（x64）と `.\scripts\build.ps1 -Platform Win32` の両方。
 - deploy は EmEditor が起動中だと失敗する。勝手に EmEditor を終了させない（ユーザーに頼む）。
+- リリースはタグ `<product>-v<version>` の push で GitHub Actions が行う（docs/releasing.md）。version.h の版と合わせる。タグの push と Release は公開操作なので、ユーザーの了承を得てから。
+- 紹介ページは `site/`（push で GitHub Pages に自動反映）。スクリーンショットはユーザーが撮る。
 
 ## ノウハウの記録
 
