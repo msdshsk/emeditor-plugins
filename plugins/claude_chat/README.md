@@ -77,7 +77,8 @@ Claude は EmEditor の文書を**ツールで読み書きできる**（Claude C
 
 | ツール | 内容 |
 |---|---|
-| `get_active_document` | アクティブな文書の名前と全文 |
+| `get_active_document` | アクティブな文書の情報と本文（行の範囲を指定して読む。既定 2000 行まで） |
+| `search_document` | 文書を文字列・正規表現で検索（大きなログから目的の箇所を探す） |
 | `get_selection` | 選択範囲 |
 | `list_documents` | 開いているタブの一覧 |
 | `replace_text` | 部分的な置換（一致が 1 か所のときだけ） |
@@ -86,6 +87,9 @@ Claude は EmEditor の文書を**ツールで読み書きできる**（Claude C
 | `new_document` | 新しいタブに書き込む |
 
 仕組みと安全策は [docs/mcp-in-plugin.md](../../docs/mcp-in-plugin.md)。
+
+**大きなファイルについて**: EmEditor は数 GB のログも開けるので、Claude が文書を読むときは全文を一度に取り出さず、必要な行の範囲だけを読みます。
+大きな文書（2 万行超など）では、Claude は検索してから周辺を読み、置換には範囲の指定が必要になり、全体の置き換えはできません。
 
 ## 設計の経緯（アクティブな文書の扱い）
 

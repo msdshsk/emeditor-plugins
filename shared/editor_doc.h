@@ -28,7 +28,63 @@ inline bool IsSavedDoc( const std::wstring& path )
 	return path.size() > 2 && ( path[1] == L':' || ( path[0] == L'\\' && path[1] == L'\\' ) );
 }
 
-// アクティブな文書の全文。Editor_GetTextW を試し、取れなければ 1 行ずつ集める
+// 論理行の数
+inline UINT_PTR GetLineCount( HWND hwndView )
+{
+	return Editor_GetLines( hwndView, POS_LOGICAL_W );
+}
+
+// 大きな文書か。EmEditor は数 GB のログも開けるので、全文を一度に取り出してはいけない文書を見分ける。
+// EmEditor 自身の判定（EI_IS_LARGE_DOC）か、行数で判断する
+constexpr UINT_PTR kLargeDocLines = 20000;
+inline bool IsLargeDoc( HWND hwndView )
+{
+	return Editor_Info( hwndView, EI_IS_LARGE_DOC, 0 ) != 0 || GetLineCount( hwndView ) > kLargeDocLines;
+}
+
+// 1 つの論理行（0 始まり、改行は含めない）。maxChars を超える長い行は先頭だけ読み、truncated を立てる
+inline std::wstring GetLineText( HWND hwndView, UINT_PTR y, size_t maxChars, bool* truncated = nullptr )
+{
+	GET_LINE_INFO gli = {};
+	gli.flags = FLAG_LOGICAL;
+	gli.yLine = y;
+	const UINT_PTR need = Editor_GetLineW( hwndView, &gli, nullptr );   // 終端 NUL を含む必要サイズ
+	if( truncated )  *truncated = false;
+	if( need <= 1 )  return {};
+	UINT_PTR cch = need;
+	if( need - 1 > maxChars ){
+		cch = maxChars + 1;
+		if( truncated )  *truncated = true;
+	}
+	std::wstring s( cch, L'\0' );
+	gli.cch = cch;
+	Editor_GetLineW( hwndView, &gli, s.data() );
+	s.resize( wcslen( s.c_str() ) );
+	return s;
+}
+
+// 行の範囲（0 始まり、最大 maxLines 行・合計 maxChars 文字まで）を \n でつないで読む。
+// 読んだ最後の行の次の行番号を nextLine に返す（文書の末尾まで読めたら行数と同じ）
+inline std::wstring ReadLines( HWND hwndView, UINT_PTR startLine, UINT_PTR maxLines, size_t maxChars, UINT_PTR& nextLine, bool* anyLineTruncated = nullptr )
+{
+	const UINT_PTR lines = GetLineCount( hwndView );
+	std::wstring text;
+	UINT_PTR y = startLine;
+	if( anyLineTruncated )  *anyLineTruncated = false;
+	for( ; y < lines && y - startLine < maxLines; y++ ){
+		if( text.size() >= maxChars )  break;
+		bool cut = false;
+		std::wstring line = GetLineText( hwndView, y, maxChars - text.size(), &cut );
+		if( cut && anyLineTruncated )  *anyLineTruncated = true;
+		if( y > startLine )  text += L'\n';
+		text += line;
+	}
+	nextLine = y;
+	return text;
+}
+
+// アクティブな文書の全文。Editor_GetTextW を試し、取れなければ 1 行ずつ集める。
+// 大きな文書では使わないこと（IsLargeDoc で確かめる）
 inline std::wstring GetDocumentText( HWND hwndView )
 {
 	const UINT_PTR cch = Editor_GetTextW( hwndView, 0, nullptr );

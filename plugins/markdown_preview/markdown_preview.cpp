@@ -36,6 +36,7 @@ constexpr UINT_PTR kRenderTimer = 1;                      // 編集後、少し�
 constexpr UINT kRenderDelayMs = 300;
 constexpr UINT_PTR kScrollTimer = 2;                      // スクロール連動を間引く
 constexpr UINT kScrollDelayMs = 30;
+constexpr UINT_PTR kMaxPreviewLines = 50000;              // これより大きい文書はプレビューしない（全文を取り出すため）
 
 // Markdown として扱う拡張子
 constexpr LPCWSTR kMarkdownExts[] = { L".md", L".markdown", L".mdown", L".mkd", L".mkdn", L".mdx", L".mdwn" };
@@ -323,6 +324,14 @@ private:
 				{ "title", "Markdown の文書ではありません" },
 				{ "text", ee::WideToUtf8( ee::doc::GetDocName( m_hwndView ) ) },
 				{ "action", "force" }, { "actionLabel", "Markdown として表示" } } );
+			return;
+		}
+
+		// 大きすぎる文書（巨大なログを「Markdown として表示」した場合など）は全文を取り出さない
+		if( ee::doc::GetLineCount( m_hwndView ) > kMaxPreviewLines || Editor_Info( m_hwndView, EI_IS_LARGE_DOC, 0 ) ){
+			Post( { { "type", "message" },
+				{ "title", "大きすぎるためプレビューしません" },
+				{ "text", ee::WideToUtf8( ee::doc::GetDocName( m_hwndView ) ) + "（" + std::to_string( ee::doc::GetLineCount( m_hwndView ) ) + " 行）" } } );
 			return;
 		}
 
