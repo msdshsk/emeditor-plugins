@@ -1,0 +1,71 @@
+# プラグインごとのリリース。タグ <product>-v<version>（例: claude-chat-v1.0.0）を push すると、
+# Windows でビルドして zip と SHA-256 を作り、GitHub Release に添付する。
+# 版は plugins/<plugin>/version.h の PLUGIN_VER_STR と一致している必要がある（scripts/package.ps1 が確認する）。
+name: Release
+
+on:
+  push:
+    tags:
+      - 'claude-chat-v*'
+      - 'markdown-preview-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve plugin and version from the tag
+        id: meta
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          if ($tag -notmatch '^(?<product>[a-z0-9-]+)-v(?<version>\d+\.\d+\.\d+)$') { throw "タグの形式が違います: $tag" }
+          $titles = @{ 'claude-chat' = 'Claude チャット'; 'markdown-preview' = 'Markdown プレビュー' }
+          "product=$($Matches.product)"                 >> $env:GITHUB_OUTPUT
+          "plugin=$($Matches.product.Replace('-','_'))" >> $env:GITHUB_OUTPUT
+          "version=$($Matches.version)"                 >> $env:GITHUB_OUTPUT
+          "title=$($titles[$Matches.product])"          >> $env:GITHUB_OUTPUT
+
+      - name: Build and package (x64 / x86)
+        shell: pwsh
+        run: .\scripts\package.ps1 -Plugin ${{ steps.meta.outputs.plugin }} -Version ${{ steps.meta.outputs.version }}
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $product = '${{ steps.meta.outputs.product }}'
+          $plugin  = '${{ steps.meta.outputs.plugin }}'
+          $version = '${{ steps.meta.outputs.version }}'
+          $title   = '${{ steps.meta.outputs.title }}'
+          $name    = "$product-$version"
+          $sums    = Get-Content "dist/$name.sha256.txt"
+          $notes = @"
+          ## $title for EmEditor v$version
+
+          紹介ページ: https://msdshsk.github.io/emeditor-plugins/$product/
+
+          ### インストール
+          1. ``$name.zip`` をダウンロードして展開する
+          2. EmEditor が 64-bit 版なら ``x64/$plugin.dll``、32-bit 版なら ``x86/$plugin.dll`` を好きなフォルダに置く
+          3. EmEditor の「プラグイン > プラグインの設定 > 追加」で DLL を選ぶ
+
+          ### SHA-256
+          ``````
+          $($sums -join "`n")
+          ``````
+
+          PowerShell で確認: ``Get-FileHash .\$name.zip -Algorithm SHA256``
+
+          このファイルは GitHub Actions がこのリポジトリのソースからビルドしたものです（コード署名はしていません）。
+          ソースからビルドする手順は [README](https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/$plugin) を参照してください。
+          "@
+          # here-string のインデント（YAML 由来の先頭 10 空白）を外す
+          $notes = ($notes -split "`n" | ForEach-Object { $_ -replace '^ {10}', '' }) -join "`n"
+          Set-Content notes.md $notes -Encoding utf8
+          gh release create '${{ github.ref_name }}' "dist/$name.zip" "dist/$name.sha256.txt" --title "$title v$version" --notes-file notes.md
