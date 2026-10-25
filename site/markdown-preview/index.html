@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown プレビュー for EmEditor — 表・数式・Mermaid までリアルタイムに</title>
+<meta name="description" content="EmEditor のサイドパネルに、編集中の Markdown を GitHub に近い見た目でリアルタイム表示。GFM の表、数式（KaTeX）、図（Mermaid）、コードの色分け、脚注に対応。スクロール連動・ダブルクリックでジャンプ。無料のプラグイン。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Markdown プレビュー for EmEditor">
+<meta property="og:description" content="表・数式（KaTeX）・図（Mermaid）・コードの色分けまで、編集中の Markdown を GitHub に近い見た目でリアルタイムに。">
+<meta property="og:url" content="https://msdshsk.github.io/emeditor-plugins/markdown-preview/">
+<meta property="og:image" content="https://msdshsk.github.io/emeditor-plugins/markdown-preview/images/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../">EmEditor Plugins</a>
+    <nav>
+      <a href="#features">対応する書き方</a>
+      <a href="#sync">エディタとの連動</a>
+      <a href="#install">インストール</a>
+      <a href="https://github.com/msdshsk/emeditor-plugins">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero wrap">
+    <span class="eyebrow">EmEditor プラグイン · 無料 · MIT ライセンス</span>
+    <h1>表も、数式も、Mermaid も。<br>書いたそばから、きれいに見える。</h1>
+    <p class="lead">
+      EmEditor のサイドパネルに、編集中の Markdown を <strong>GitHub に近い見た目</strong>でリアルタイム表示するプラグインです。<br>
+      GFM の表やタスクリストはもちろん、数式（KaTeX）・図（Mermaid）・コードの色分け・脚注まで。
+    </p>
+    <div class="buttons">
+      <a class="btn primary" href="https://github.com/msdshsk/emeditor-plugins/releases?q=markdown-preview&amp;expanded=true">⬇ ダウンロード</a>
+      <a class="btn" href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/markdown_preview">ソースコード</a>
+    </div>
+    <div class="shot">
+      <img src="images/screenshot.png" width="1552" height="1094" alt="左が EmEditor で開いた Markdown のソース、右がプレビュー。アラート、表、タスクリスト、数式、Mermaid のフローチャート、YAML のコード、脚注が表示されている">
+    </div>
+    <p class="caption">左のソースを編集すると、右のプレビューが 0.3 秒後に追従します。</p>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>対応する書き方</h2>
+      <p class="section-lead">GitHub で見慣れた表現を、そのまま EmEditor の中で確認できます。</p>
+      <div class="grid">
+        <div class="card">
+          <div class="icon">📊</div>
+          <h3>GFM の表・タスクリスト</h3>
+          <p>左・中央・右寄せの混在した表、チェックボックス付きのタスクリスト、取り消し線、URL の自動リンク。</p>
+        </div>
+        <div class="card">
+          <div class="icon">∑</div>
+          <h3>数式（KaTeX）</h3>
+          <p>行内の <code>$…$</code>、独立した <code>$$…$$</code>、GitHub と同じ <code>```math</code> と <code>$`…`$</code>。<code>$5</code> のような金額は数式にしません。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔀</div>
+          <h3>図（Mermaid）</h3>
+          <p><code>```mermaid</code> でフローチャート・シーケンス図・ガントチャートなど。同じ図は描き直さないので、編集中も軽快です。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🎨</div>
+          <h3>コードの色分け</h3>
+          <p>言語を指定したコードブロックを highlight.js で色分け。GitHub 風の配色で、ダークテーマにも対応。</p>
+        </div>
+        <div class="card">
+          <div class="icon">❗</div>
+          <h3>アラート・脚注・front matter</h3>
+          <p><code>&gt; [!NOTE]</code> などの GitHub のアラート、<code>[^1]</code> の脚注、先頭の YAML front matter（折りたたみ表示）。</p>
+        </div>
+        <div class="card">
+          <div class="icon">🖼️</div>
+          <h3>相対パスの画像・生 HTML</h3>
+          <p><code>![](images/a.png)</code> は文書のフォルダから表示。<code>&lt;details&gt;</code> などの HTML もそのまま表示します（スクリプトは動きません）。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sync">
+    <div class="wrap">
+      <h2>エディタと連動する</h2>
+      <p class="section-lead">プレビューを「別の窓で見る」のではなく、エディタの隣で一緒に動きます。</p>
+      <div class="grid">
+        <div class="card"><div class="icon">⚡</div><h3>リアルタイムに追従</h3><p>入力が止まって 0.3 秒後に描き直し。スクロール位置は保ったままです。</p></div>
+        <div class="card"><div class="icon">↕️</div><h3>スクロール連動</h3><p>エディタをスクロールすると、プレビューも同じ場所へ。カーソルのある段落はプレビュー側で薄く強調されます。</p></div>
+        <div class="card"><div class="icon">🎯</div><h3>ダブルクリックでジャンプ</h3><p>プレビューの気になる箇所をダブルクリックすると、エディタのその行へ移動します。</p></div>
+        <div class="card"><div class="icon">🗂️</div><h3>タブに追従</h3><p>タブを切り替えると、その文書のプレビューに。見出しへのリンクはプレビュー内で移動、相対リンクのファイルは EmEditor で開きます。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <h2>しくみ</h2>
+      <p>表示には WebView2（Microsoft Edge の描画エンジン）を使い、Markdown を <a href="https://github.com/markedjs/marked">marked</a> で HTML にしています。
+        数式は <a href="https://katex.org/">KaTeX</a>、図は <a href="https://mermaid.js.org/">Mermaid</a>、コードの色分けは <a href="https://highlightjs.org/">highlight.js</a>、脚注は marked-footnote。</p>
+      <ul class="check">
+        <li><strong>DLL 1 つで完結</strong>: ライブラリとフォントはすべて DLL に埋め込み済み。実行中にネットワークから何かを読み込むことはありません</li>
+        <li><strong>重い Mermaid は必要なときだけ</strong>: 図が出てきたときに初めて読み込みます</li>
+        <li><strong>明暗テーマ</strong>: Windows のアプリの設定（ライト / ダーク）に追従します</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <h2>インストール</h2>
+      <table>
+        <tr><th>必要なもの</th><td>EmEditor（64-bit なら x64 版、32-bit なら x86 版の DLL）／ WebView2 Runtime（Windows 11 は標準で入っています）</td></tr>
+        <tr><th>動作確認した環境</th><td>Windows 11 / EmEditor 23.0.5（64-bit）</td></tr>
+      </table>
+      <ol class="steps">
+        <li><a href="https://github.com/msdshsk/emeditor-plugins/releases?q=markdown-preview&amp;expanded=true">Releases</a> から zip をダウンロードし、<code>markdown_preview.dll</code> を好きなフォルダに置く（SHA-256 も掲載しています）</li>
+        <li>EmEditor の「プラグイン &gt; プラグインの設定 &gt; 追加」で DLL を選ぶ</li>
+        <li>Markdown（<code>.md</code> など）を開いて、「プラグイン &gt; Markdown プレビュー」でパネルを開く</li>
+      </ol>
+      <p class="note">拡張子が Markdown でない文書も、パネルの「Markdown として表示」ボタンでプレビューできます。ソースからのビルド手順は <a href="https://github.com/msdshsk/emeditor-plugins/tree/main/plugins/markdown_preview">README</a> を参照してください。</p>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="wrap">
+      <h2>安全性</h2>
+      <div class="grid">
+        <div class="card"><h3>スクリプトは動かない</h3><p>プレビューは CSP で、プラグイン自身のスクリプト以外を一切実行しません。文書中の <code>&lt;script&gt;</code>、<code>onclick</code>、<code>javascript:</code> リンク、<code>&lt;iframe&gt;</code> は無効です。</p></div>
+        <div class="card"><h3>見えるのは文書のフォルダだけ</h3><p>相対パスの画像のために、ローカルで見せるのは開いている文書のフォルダだけです。</p></div>
+        <div class="card"><h3>リンクはブラウザへ</h3><p>リンクをクリックしても、プレビューの中では開かず、http(s) は既定のブラウザに渡します。</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Markdown プレビュー for EmEditor — <a href="https://github.com/msdshsk/emeditor-plugins">github.com/msdshsk/emeditor-plugins</a> · MIT License · © 2026 msd.shsk</p>
+    <p>同梱ライブラリ: marked / marked-footnote / KaTeX / Mermaid（MIT）、highlight.js（BSD 3-Clause）。詳細は <a href="https://github.com/msdshsk/emeditor-plugins/blob/main/THIRD_PARTY_NOTICES.md">THIRD_PARTY_NOTICES</a>。</p>
+    <p>EmEditor は Emurasoft, Inc. の商標です。本プラグインは Emurasoft, Inc. とは関係のない非公式のものです。</p>
+  </div>
+</footer>
+
+</body>
+</html>

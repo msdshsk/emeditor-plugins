@@ -168,7 +168,7 @@ window.addEventListener('error', (e) => {
     },
   ];
 
-  marked.use(markedFootnote());
+  marked.use(markedFootnote({ description: '脚注' }));   // 既定は英語の "Footnotes"
   marked.use({
     gfm: true,
     breaks: false,
