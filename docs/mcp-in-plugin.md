@@ -61,7 +61,10 @@ claude（Claude Code 2.1.302）が送ってくるもの:
 | ツール | 内容 |
 |---|---|
 | `get_active_document` | 名前・パス・行数と、**行の範囲**の本文（`start_line` / `max_lines`、既定 2000 行・20 万字）。続きがあれば `next_start_line`。`large` で大きな文書かを返す |
-| `search_document` | 1 行ずつ文字列 / 正規表現で探し、行番号と内容を返す。1 回約 2 秒で打ち切り、`next_start_line` から再開 |
+| `search_document` | **EmEditor の検索**（`Editor_FindW`）で一致の総数（`FLAG_FIND_COUNT`）と、一致した行（`FLAG_FIND_NEXT` で順にたどる）を返す。終わったらカーソル・選択・スクロール・検索の強調表示を元に戻す |
+| `extract_lines` | EmEditor の「抽出」（`FLAG_FIND_EXTRACT`）で一致した行を新しいタブに抜き出す |
+| `replace_all` | EmEditor の「すべて置換」（`Editor_ReplaceW` + `FLAG_REPLACE_ALL`。検索語と置換語を `\0` 区切り・末尾 `\0\0` で渡す） |
+| `filter_view` / `get_filter` | EmEditor のフィルター（`Editor_Filter`。行全体は `iColumn = -1`）と、今のフィルター設定の読み取り（`EE_GET_FILTER`） |
 | `get_selection` | 選択範囲のテキストと位置（20 万字まで） |
 | `list_documents` | タブの一覧（`EI_GET_DOC_COUNT` / `Editor_DocInfo`） |
 | `replace_text` | Claude Code の Edit と同じ。`old_string` が 1 か所だけ一致するときに置換。0 か所・複数は失敗を返す。大きな文書では `start_line` / `end_line`（最大 5000 行）が必須 |
@@ -74,7 +77,9 @@ claude（Claude Code 2.1.302）が送ってくるもの:
 - **全文を一度に取り出さない**。`Editor_GetTextW` で全文を取ってから切ると、取り出した時点で数 GB を確保して EmEditor が固まる。
   読むのは常に行の範囲（`Editor_GetLineW` を 1 行ずつ）。1 行が極端に長い場合（1 行に何百 MB の JSON など）も上限で切る
 - 「大きな文書」の判定は `EI_IS_LARGE_DOC`（EmEditor 自身の判定）か 2 万行超（`ee::doc::IsLargeDoc`）。どちらも全文を読まずに分かる
-- 検索はツールの中で 1 行ずつ行い、**時間で区切る**（UI スレッドで動くので、長く走らせると EmEditor が固まる）
+- 検索・抽出・一括置換・フィルターは **EmEditor 自身の機能に任せる**。プラグインが 1 行ずつ読んで探すより桁違いに速い
+  （300 万行・302MB のログで、件数の集計・抽出・IP アドレスの一括置換・フィルターがいずれも実用的な速さで動いた。2026-10-25 確認）
+- 検索 API はカーソル・選択範囲・スクロール・検索の強調表示を動かすので、ツールの最後に元に戻す
 - 置換・全体置き換えは、大きな文書では範囲の指定を必須にする / 禁止する。Claude には「探してから周辺を読む」流れをシステムプロンプトで伝える
 - Markdown プレビューも 5 万行を超える文書は描画しない（描画には全文が要るため）
 

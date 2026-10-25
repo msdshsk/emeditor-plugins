@@ -78,7 +78,10 @@ Claude は EmEditor の文書を**ツールで読み書きできる**（Claude C
 | ツール | 内容 |
 |---|---|
 | `get_active_document` | アクティブな文書の情報と本文（行の範囲を指定して読む。既定 2000 行まで） |
-| `search_document` | 文書を文字列・正規表現で検索（大きなログから目的の箇所を探す） |
+| `search_document` | EmEditor の検索で、一致の件数と一致した行を返す（大きなログから目的の箇所を探す） |
+| `extract_lines` | 一致した行だけを新しいタブに抜き出す（EmEditor の「抽出」） |
+| `replace_all` | 一致をすべて置き換える（EmEditor の「すべて置換」。正規表現・後方参照可） |
+| `filter_view` / `get_filter` | 一致した行だけを画面に表示する（EmEditor のフィルター）／今のフィルター設定を返す |
 | `get_selection` | 選択範囲 |
 | `list_documents` | 開いているタブの一覧 |
 | `replace_text` | 部分的な置換（一致が 1 か所のときだけ） |

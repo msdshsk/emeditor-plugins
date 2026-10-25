@@ -76,6 +76,17 @@
 - 調べ方: Debug ビルドを `deploy.ps1 -Configuration Debug` で配置し、VS で EmEditor.exe にアタッチして同じ操作をすると、落ちた行で止まる
 - 確認: 2026-10-25 / EmEditor 23.0.5
 
+### プラグインからフィルター（EE_FILTER）をかけると、検索語は入るのに 0 行になる
+
+- 症状: フィルターバーに検索語は入るが、列の欄が「行全体」ではなく **「カスタム (1...0)」** になり、何も表示されない。
+  フィルター中は隠れた行が検索対象から外れるので、検索も 0 件になる
+- 原因: `FILTER_INFO_EX::iColumn` の値の割り当てが、マクロの `document.Filter` と違う。
+  マクロは「0 = 行全体、-1 = 文字位置（xBegin/xEnd）で範囲指定」だが、プラグイン API で 0 を渡すと範囲指定（カスタム）として扱われた
+- 対処: プラグイン API では **`iColumn = -1` が行全体**。`Editor_GetFilter` で読み返すと、EmEditor 自身の「行全体」フィルターも -1 だった
+- 調べ方: `Editor_GetFilter`（`EE_GET_FILTER`）で、EmEditor の UI からかけたフィルターの設定を読み取り、同じ値を使う。
+  マクロのリファレンスの値をそのままプラグイン API に当てはめない
+- 確認: 2026-10-25 / EmEditor（claude_chat の filter_view / get_filter ツール）
+
 ### リッチエディットで色・太字・字下げが一切効かない（箇条書きの「・」など、文字の置き換えだけは反映される）
 
 - 原因: `EM_SETEDITSTYLE` で `SES_EMULATESYSEDIT` を付けていた。これは「普通の EDIT のふりをする」設定で、書式がすべて無視される
